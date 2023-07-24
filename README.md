@@ -12,8 +12,8 @@ This [GitHub](https://github.com/cdk-entest/aws-kinesis-serverless/blob/master/R
 
 - kinesis firehose and dynamic partition
 - lambda and kinesis enhanced fan-out
-
-![Untitled Diagram drawio](https://github.com/cdk-entest/aws-kinesis-serverless/assets/20411077/69001712-9f0b-4160-a94d-604b6e536614)
+  
+![kinesis_serverless_1](https://github.com/cdk-entest/aws-kinesis-serverless/assets/20411077/2dca6c22-2d58-404e-9503-5adb2e2f9570)
 
 <LinkedImage
   alt="kinesis_serverless_1"
