@@ -247,3 +247,7 @@ if __name__ == '__main__':
 - [serverless workshop](https://data-processing.serverlessworkshops.io/)
 
 - [amazon kinesis enhanced fan-out blog](https://medium.com/avmconsulting-blog/amazon-kinesis-enhanced-fan-out-4e500411a414)
+
+- [cdk kinesis firehose error](https://github.com/aws/aws-cdk/issues/5221)
+
+- [kinesis firehose dynamic partition](https://docs.aws.amazon.com/firehose/latest/dev/s3-prefixes.html)
