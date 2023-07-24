@@ -3,7 +3,7 @@ author: haimtran
 title: kinesis serverless demo
 description:
 publishedDate: 17/07/2023
-date: 17/07/2023
+date: 2022-07-17
 ---
 
 ## Introduction
@@ -14,6 +14,11 @@ This [GitHub](https://github.com/cdk-entest/aws-kinesis-serverless/blob/master/R
 - lambda and kinesis enhanced fan-out
 
 ![Untitled Diagram drawio](https://github.com/cdk-entest/aws-kinesis-serverless/assets/20411077/69001712-9f0b-4160-a94d-604b6e536614)
+
+<LinkedImage
+  alt="kinesis_serverless_1"
+  src="/thumbnail/kinesis_serverless_1.png"
+/>
 
 ## Kinesis Firehose
 
