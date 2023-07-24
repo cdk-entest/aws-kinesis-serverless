@@ -10,11 +10,103 @@ date: 17/07/2023
 
 This [GitHub](https://github.com/cdk-entest/aws-kinesis-serverless/blob/master/README.md) shows some basic serverless architecture with kinesis
 
+- kinesis firehose and dynamic partition
 - lambda and kinesis enhanced fan-out
 
-> Configure the ParallelizationFactor setting to process one shard of a Kinesis or DynamoDB data stream with more than one Lambda invocation simultaneously. You can specify the number of concurrent batches that Lambda polls from a shard via a parallelization factor from 1 (default) to 10. For example, when you set ParallelizationFactor to 2, you can have 200 concurrent Lambda invocations at maximum to process 100 Kinesis data shards. This helps scale up the processing throughput when the data volume is volatile and the IteratorAge is high. Note that parallelization factor will not work if you are using Kinesis aggregation. For more information, see New AWS Lambda scaling controls for Kinesis and DynamoDB event sources. Also, see the Serverless Data Processing on AWS workshop for complete tutorials.
-
 ![Untitled Diagram drawio](https://github.com/cdk-entest/aws-kinesis-serverless/assets/20411077/69001712-9f0b-4160-a94d-604b6e536614)
+
+## Kinesis Firehose
+
+Let create a Kinesis Frehose to deliver data from Kinesis Data Stream to S3. First, we need a role for Firehose to access the stream source, and write data to S3.
+
+```ts
+// role for kinesis firehose
+const role = new aws_iam.Role(this, "RoleForKinesisFirehose", {
+  assumedBy: new aws_iam.ServicePrincipal("firehose.amazonaws.com"),
+  roleName: "RoleForKinesisFirehose",
+});
+
+role.addToPolicy(
+  new aws_iam.PolicyStatement({
+    effect: Effect.ALLOW,
+    actions: ["s3:*"],
+    resources: ["*"],
+  })
+);
+
+role.addToPolicy(
+  new aws_iam.PolicyStatement({
+    effect: Effect.ALLOW,
+    actions: ["cloudwatch:*"],
+    resources: ["*"],
+  })
+);
+
+role.addToPolicy(
+  new aws_iam.PolicyStatement({
+    effect: Effect.ALLOW,
+    actions: ["logs:*"],
+    resources: ["*"],
+  })
+);
+
+const firehorsePolicy = new aws_iam.Policy(this, "FirehosePolicy", {
+  roles: [role],
+  statements: [
+    new aws_iam.PolicyStatement({
+      effect: Effect.ALLOW,
+      actions: ["kinesis:*"],
+      resources: ["*"],
+    }),
+  ],
+});
+```
+
+Next, create a delivery stream with Kinesis Firehose
+
+```ts
+// create a firehorse delivery
+const firehose = new aws_kinesisfirehose.CfnDeliveryStream(
+  this,
+  "KinesisFirehoseDemo",
+  {
+    deliveryStreamName: "KinesisFirehoseDemo",
+    // direct put or kinesis as source
+    deliveryStreamType: "KinesisStreamAsSource",
+    kinesisStreamSourceConfiguration: {
+      // source stream
+      kinesisStreamArn: `arn:aws:kinesis:${this.region}:${this.account}:stream/${props.streamName}`,
+      // role access source
+      roleArn: role.roleArn,
+    },
+    s3DestinationConfiguration: {
+      bucketArn: `arn:aws:s3:::${props.bucketName}`,
+      // role access destination
+      roleArn: role.roleArn,
+      bufferingHints: {
+        intervalInSeconds: 60,
+        sizeInMBs: 123,
+      },
+      cloudWatchLoggingOptions: {
+        enabled: true,
+        logGroupName: "FirehoseDemo",
+        logStreamName: "FirehoseDemo",
+      },
+      // compressionFormat: "",
+      // encryptionConfiguration: {},
+      errorOutputPrefix: "firehose-error",
+      prefix: "firehose-data",
+    },
+  }
+);
+```
+
+Need to add some dependencies
+
+```ts
+firehose.addDependency(role.node.defaultChild as CfnResource);
+firehose.addDependency(firehorsePolicy.node.defaultChild as CfnResource);
+```
 
 ## Lamda and Kinesis
 
@@ -235,6 +327,10 @@ if __name__ == '__main__':
     kinesis_client = boto3.client('kinesis', region_name=REGION)
     send_data(STREAM_NAME, kinesis_client)
 ```
+
+## Troubleshooting
+
+> Configure the ParallelizationFactor setting to process one shard of a Kinesis or DynamoDB data stream with more than one Lambda invocation simultaneously. You can specify the number of concurrent batches that Lambda polls from a shard via a parallelization factor from 1 (default) to 10. For example, when you set ParallelizationFactor to 2, you can have 200 concurrent Lambda invocations at maximum to process 100 Kinesis data shards. This helps scale up the processing throughput when the data volume is volatile and the IteratorAge is high. Note that parallelization factor will not work if you are using Kinesis aggregation. For more information, see New AWS Lambda scaling controls for Kinesis and DynamoDB event sources. Also, see the Serverless Data Processing on AWS workshop for complete tutorials.
 
 ## References
 
