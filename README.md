@@ -12,8 +12,8 @@ This [GitHub](https://github.com/cdk-entest/aws-kinesis-serverless/blob/master/R
 
 - kinesis firehose and dynamic partition
 - lambda and kinesis enhanced fan-out
-  
-![kinesis_serverless_1](https://github.com/cdk-entest/aws-kinesis-serverless/assets/20411077/2dca6c22-2d58-404e-9503-5adb2e2f9570)
+
+![Untitled Diagram drawio](https://github.com/cdk-entest/aws-kinesis-serverless/assets/20411077/69001712-9f0b-4160-a94d-604b6e536614)
 
 <LinkedImage
   alt="kinesis_serverless_1"
@@ -111,6 +111,67 @@ Need to add some dependencies
 ```ts
 firehose.addDependency(role.node.defaultChild as CfnResource);
 firehose.addDependency(firehorsePolicy.node.defaultChild as CfnResource);
+```
+
+## Dynamic Parition
+
+Let create click stream with sample data as below
+
+```json
+{
+  "event_id": "d912439ab3f1199c735b25a73003105e",
+  "event": "reviewed_item",
+  "user_id": 25,
+  "item_id": 53,
+  "item_quantity": 0,
+  "event_time": "2022-09-02 18:11:19.552570",
+  "os": "web",
+  "page": "home",
+  "url": "www.example.com"
+}
+```
+
+Let create a simple producer
+
+```py
+event =
+{
+  "event_id": get_event_id(),
+  "event": eventname,
+  "user_id": get_user_id(),
+  "item_id": itemid,
+  "item_quantity": itemquantity,
+  "event_time": get_event_time(),
+  "os": get_os(),
+  "page": get_page(),
+  "url": "www.example.com"
+}
+
+response = client.put_record(
+    StreamName=stream_name,
+    Data=encoded_data,
+    PartitionKey="partitionkey")
+```
+
+Enable the dynamic partitioning and setup the jq processing (inline parsing for JSON)
+
+```json
+[
+  {
+    "key": "page",
+    "value": ".page"
+  },
+  {
+    "key": "event",
+    "value": ".event"
+  }
+]
+```
+
+Then configure the s3 prefix dynamically which means read into records
+
+```sql
+page=!{partitionKeyFromQuery:page}/event=!{partitionKeyFromQuery:event}/
 ```
 
 ## Lamda and Kinesis
@@ -352,3 +413,5 @@ if __name__ == '__main__':
 - [cdk kinesis firehose error](https://github.com/aws/aws-cdk/issues/5221)
 
 - [kinesis firehose dynamic partition](https://docs.aws.amazon.com/firehose/latest/dev/s3-prefixes.html)
+
+- [kinesis firehose dynamic partition blog](https://aws.amazon.com/blogs/big-data/kinesis-data-firehose-now-supports-dynamic-partitioning-to-amazon-s3/)
